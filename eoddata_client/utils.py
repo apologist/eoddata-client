@@ -1,6 +1,4 @@
 import datetime
-import functools
-
 
 class Error(Exception):
     """Base error for this module."""
