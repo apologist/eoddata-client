@@ -92,4 +92,5 @@ ENV/
 # PyCharm
 .idea/
 
+.pypirc
 test.py

@@ -28,6 +28,7 @@ MSG_INVALID_TOKEN = 'Invalid Token'
 MSG_NOT_LOGGED_IN = 'Not logged in'
 MSG_INVALID_EXCHANGE_CODE = 'Invalid Exchange Code'
 MSG_INVALID_SYMBOL_CODE = 'Invalid Symbol Code'
+MSG_PART_ACCESS_LIMIT = 'You can only access'
 
 
 class Error(Exception):
@@ -56,6 +57,10 @@ class EodDataInternalServerError(Error):
 
 class ReloginDepthReachedError(Error):
     """Relogin depth reached."""
+
+
+class AccessLimitError(Error):
+    """Error trying to access data beyond available subscription."""
 
 
 class EodDataHttpClient(object):
@@ -180,15 +185,18 @@ class EodDataHttpClient(object):
             elif message == MSG_LOGIN_SUCCESS:
                 self._token = root.attrib['Token']
                 return True
+            elif message == MSG_INVALID_CREDENTIALS:
+                raise InvalidCredentialsError(message)
             elif message == MSG_INVALID_TOKEN or message == MSG_NOT_LOGGED_IN:
                 return False
             elif message == MSG_INVALID_EXCHANGE_CODE:
-                raise InvalidExchangeCodeError
+                raise InvalidExchangeCodeError(message)
             elif message == MSG_INVALID_SYMBOL_CODE:
-                raise InvalidSymbolCodeError
+                raise InvalidSymbolCodeError(message)
+            elif message.startswith(MSG_PART_ACCESS_LIMIT):
+                raise AccessLimitError(message)
         elif response.status_code == 500:
-            return False
-            # raise EodDataInternalServerError
+            raise EodDataInternalServerError
 
     def login(self):
         """
@@ -268,12 +276,12 @@ class EodDataHttpClient(object):
             return self.retry(self.exchange_detail, exchange_code)
 
     @retry_limit
-    def exchange_list(self):
+    def exchange_list(self, output_format='entity-list'):
         """
         Get all available exchanges.
         
         Returns:
-            list, EodData exchanges.
+            list or pandas.DataFrame, EodData exchanges.
         """
         response = requests.get(self._base_url + 'ExchangeList', params=self.get_params())
         if self.process_response(response):
@@ -282,10 +290,10 @@ class EodDataHttpClient(object):
             exchanges = []
             for exchange_xml in exchanges_xml:
                 exchange = EodDataExchange.from_xml(exchange_xml)
-                exchanges.append(str(exchange))
-            return exchanges
+                exchanges.append(exchange)
+            return EodDataExchange.format(exchanges, output_format=output_format)
         else:
-            return self.retry(self.exchange_list)
+            return self.retry(self.exchange_list, output_format=output_format)
 
     @retry_limit
     def exchange_months(self):
@@ -341,12 +349,12 @@ class EodDataHttpClient(object):
             return self.retry(self.quote_detail, exchange_code, symbol)
 
     @retry_limit
-    def quote_list(self, exchange_code):
+    def quote_list(self, exchange_code, output_format='entity-list'):
         """
         Get a complete list of end of day quotes for an entire exchange.
         
         Returns:
-            list, EodData extended quotes.
+            list or pandas.DataFrame, EodData extended quotes.
         """
         additional = {
             'Exchange': exchange_code.upper()
@@ -359,12 +367,12 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list, exchange_code)
+            return self.retry(self.quote_list, exchange_code, output_format=output_format)
 
     @retry_limit
-    def quote_list_specific(self, exchange_code, symbol_list):
+    def quote_list_specific(self, exchange_code, symbol_list, output_format='entity-list'):
         """
         Get end of day quotes for specific symbols.
         
@@ -373,7 +381,7 @@ class EodDataHttpClient(object):
             symbol_list (list of str): Symbol list.
             
         Returns:
-            list, EodData extended quotes.
+            list or pandas.DataFrame, EodData extended quotes.
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -387,12 +395,12 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list_specific, exchange_code, symbol_list)
+            return self.retry(self.quote_list_specific, exchange_code, symbol_list, output_format=output_format)
 
     @retry_limit
-    def quote_list_by_date(self, exchange_code, date):
+    def quote_list_by_date(self, exchange_code, date, output_format='entity-list'):
         """
         Get a complete list of end of day quotes for an entire exchange and a specific date.
         
@@ -401,7 +409,7 @@ class EodDataHttpClient(object):
             date (datetime.date): Date.
 
         Returns:
-            list, EodData extended quotes
+            list or pandas.DataFrame, EodData extended quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -418,17 +426,17 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list_by_date, exchange_code, date)
+            return self.retry(self.quote_list_by_date, exchange_code, date, output_format=output_format)
 
     @retry_limit
-    def quote_list_by_date_compact(self, exchange_code, date):
+    def quote_list_by_date_compact(self, exchange_code, date, output_format='entity-list'):
         """
         Get a complete list of end of day quotes for an entire exchange and a specific date (compact format).
         
         Returns:
-            list, EodData compact quotes
+            list or pandas.DataFrame, EodData compact quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -445,17 +453,17 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteCompact.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteCompact.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list_by_date_compact, exchange_code, date)
+            return self.retry(self.quote_list_by_date_compact, exchange_code, date, output_format=output_format)
 
     @retry_limit
-    def quote_list_by_date_period(self, exchange_code, date, period):
+    def quote_list_by_date_period(self, exchange_code, date, period, output_format='entity-list'):
         """
         Get a complete list of end of day quotes for an entire exchange and a specific date (compact format).
         
         Returns:
-            list, EodData extended quotes
+            list or pandas.DataFrame, EodData extended quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -473,17 +481,17 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list_by_date_period, exchange_code, date, period)
+            return self.retry(self.quote_list_by_date_period, exchange_code, date, period, output_format=output_format)
 
     @retry_limit
-    def quote_list_by_date_period_compact(self, exchange_code, date, period):
+    def quote_list_by_date_period_compact(self, exchange_code, date, period, output_format='entity-list'):
         """
         Get a complete list of end of day quotes for an entire exchange and a specific date (compact format).
         
         Returns:
-            EodDataQuoteCompact object.
+            list or pandas.DataFrame, EodData compact quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -501,17 +509,17 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteCompact.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteCompact.format(quotes, output_format=output_format, df_index='Symbol')
         else:
-            return self.retry(self.quote_list_by_date_period_compact, exchange_code, date, period)
+            return self.retry(self.quote_list_by_date_period_compact, exchange_code, date, period, output_format)
 
     @retry_limit
-    def symbol_history(self, exchange_code, symbol, start_date):
+    def symbol_history(self, exchange_code, symbol, start_date, output_format='entity-list'):
         """
         Get a list of historical end of day data of a specified symbol and specified start date up to today's date.
         
         Returns:
-            EodDataQuoteExtended object.
+            list or pandas.DataFrame, EodData extended quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -529,17 +537,17 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format)
         else:
-            return self.retry(self.symbol_history, exchange_code, symbol, start_date)
+            return self.retry(self.symbol_history, exchange_code, symbol, start_date, output_format=output_format)
 
     @retry_limit
-    def symbol_history_period(self, exchange_code, symbol, date, period):
+    def symbol_history_period(self, exchange_code, symbol, date, period, output_format='entity-list'):
         """
         Get a list of historical data of a specified symbol, specified date and specified period.
         
         Returns:
-            EodDataQuoteExtended object.
+            list or pandas.DataFrame, EodData extended quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -558,17 +566,18 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format)
         else:
-            return self.retry(self.symbol_history_period, exchange_code, symbol, date, period)
+            return self.retry(self.symbol_history_period, exchange_code, symbol, date, period, output_format=output_format)
 
     @retry_limit
-    def symbol_history_period_by_range(self, exchange_code, symbol, start_date, end_date, period):
+    def symbol_history_period_by_range(self, exchange_code, symbol, start_date, end_date, period,
+                                       output_format='entity-list'):
         """
         Get a list of historical data of a specified symbol, specified date range and specified period.
         
         Returns:
-            EodDataQuoteExtended object.
+            list or pandas.DataFrame, EodData extended quotes
         """
         additional = {
             'Exchange': exchange_code.upper(),
@@ -588,6 +597,7 @@ class EodDataHttpClient(object):
             for quote_xml in list(quotes_xml):
                 quote = EodDataQuoteExtended.from_xml(quote_xml)
                 quotes.append(quote)
-            return quotes
+            return EodDataQuoteExtended.format(quotes, output_format=output_format)
         else:
-            return self.retry(self.symbol_history_period_by_range, exchange_code, symbol, start_date, end_date, period)
+            return self.retry(self.symbol_history_period_by_range, exchange_code, symbol, start_date, end_date, period,
+                              output_format=output_format)
