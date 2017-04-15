@@ -1,3 +1,5 @@
+import pandas as pd
+
 from eoddata_client.utils import string_to_datetime
 
 
@@ -65,8 +67,35 @@ class EodDataExchange(object):
         )
 
     def to_dict(self):
-        # TODO: convert to dictionary compatible with pandas dataframe
-        pass
+        return {
+            'Name': self.name,
+            'Last Trade Time': self.last_trade_time,
+            'Country Code': self.country_code,
+            'Currency': self.currency,
+            'Advances': self.advances,
+            'Declines': self.declines,
+            'Timezone': self.timezone,
+            'Intraday Start Date': self.intraday_start_date,
+            'Is Intraday': self.is_intraday,
+            'Has Intraday': self.has_intraday
+        }
+
+    @classmethod
+    def list_to_df(cls, exchange_list):
+        data = [exchange.to_dict() for exchange in exchange_list]
+        index = [exchange.code for exchange in exchange_list]
+        return pd.DataFrame(data=data, index=index)
+
+    @classmethod
+    def format(cls, exchange_list, input_format='entity-list', output_format=None):
+        if output_format is None:
+            return exchange_list
+        elif input_format == output_format:
+            return exchange_list
+        elif input_format == 'entity-list' and output_format == 'data-frame':
+            return cls.list_to_df(exchange_list)
+        else:
+            raise NotImplementedError
 
     def __repr__(self):
         return 'EodDataExchange(code={0}, name={1}, last_trade_time={2}, country_code={3}, currency={4}, ' \
@@ -137,8 +166,41 @@ class EodDataQuoteCompact(object):
         )
 
     def to_dict(self):
-        # TODO: convert to dictionary compatible with pandas dataframe
-        pass
+        return {
+            'Datetime': self.quote_datetime,
+            'Symbol': self.symbol,
+            'Open': self.open,
+            'High': self.high,
+            'Low': self.low,
+            'Close': self.close,
+            'Volume': self.volume
+
+        }
+
+    @classmethod
+    def list_to_df(cls, quote_list, index_column='Datetime'):
+        index = []
+        data = []
+        columns = ['Datetime', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
+        columns.remove(index_column)
+        for quote in quote_list:
+            d = quote.to_dict()
+            index.append(d[index_column])
+            del d[index_column]
+            data.append(d)
+        return pd.DataFrame(data=data, index=index,
+                            columns=columns)
+
+    @classmethod
+    def format(cls, quote_list, input_format='entity-list', output_format=None, df_index='Datetime'):
+        if output_format is None:
+            return quote_list
+        elif input_format == output_format:
+            return quote_list
+        if input_format == 'entity-list' and output_format == 'data-frame':
+            return cls.list_to_df(quote_list, df_index)
+        else:
+            raise NotImplementedError
 
     def __repr__(self):
         return 'EodDataQuoteCompact(symbol={0}, quote_datetime={1}, open={2}, high={3}, low={4}, close={5}, ' \
@@ -226,8 +288,42 @@ class EodDataQuoteExtended(object):
         )
 
     def to_dict(self):
-        # TODO: convert to dictionary compatible with pandas dataframe
-        pass
+        return {
+            'Datetime': self.quote_datetime,
+            'Symbol': self.symbol,
+            'Open': self.open,
+            'High': self.high,
+            'Low': self.low,
+            'Close': self.close,
+            'Volume': self.volume,
+            'Name': self.name
+
+        }
+
+    @classmethod
+    def list_to_df(cls, quote_list, index_column='Datetime'):
+        index = []
+        data = []
+        columns = ['Datetime', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
+        columns.remove(index_column)
+        for quote in quote_list:
+            d = quote.to_dict()
+            index.append(d[index_column])
+            del d[index_column]
+            data.append(d)
+        return pd.DataFrame(data=data, index=index,
+                            columns=columns)
+
+    @classmethod
+    def format(cls, quote_list, input_format='entity-list', output_format=None, df_index='Datetime'):
+        if output_format is None:
+            return quote_list
+        elif input_format == output_format:
+            return quote_list
+        if input_format == 'entity-list' and output_format == 'data-frame':
+            return cls.list_to_df(quote_list, index_column=df_index)
+        else:
+            raise NotImplementedError
 
     def __repr__(self):
         return 'EodDataQuoteExtended(symbol={0}, quote_datetime={1}, open={2}, high={3}, low={4}, close={5}, ' \

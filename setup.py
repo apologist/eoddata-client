@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='eoddata_client',
     packages=['eoddata_client'],
-    version='0.1.1',
+    version='0.3.0',
     description='Client to get historical market data from EODData web service.',
     author='Aleksey',
     author_email='apologist.code@gmail.com',
@@ -18,6 +18,7 @@ setup(
         'License :: Public Domain',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
     ],
     install_requires=['requests'],
 )
