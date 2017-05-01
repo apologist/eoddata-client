@@ -327,12 +327,148 @@ class EodDataQuoteExtended(object):
 
     def __repr__(self):
         return 'EodDataQuoteExtended(symbol={0}, quote_datetime={1}, open={2}, high={3}, low={4}, close={5}, ' \
-               'volume={6}, open_interest={7}, previous={8}, change={9}, bid={10}, ask={11}, ' \
-               'previous_close={12}, next_open={13}, modified={14}, name={15}, description={16})'.format(
-                    self.symbol, self.quote_datetime, self.open, self.high, self.low, self.close,
-                    self.volume, self.open_interest, self.previous, self.change, self.bid, self.ask,
-                    self.previous_close, self.next_open, self.modified, self.name, self.description
-               )
+        'volume={6}, open_interest={7}, previous={8}, change={9}, bid={10}, ask={11}, ' \
+        'previous_close={12}, next_open={13}, modified={14}, name={15}, description={16})'.format(
+            self.symbol, self.quote_datetime, self.open, self.high, self.low, self.close,
+            self.volume, self.open_interest, self.previous, self.change, self.bid, self.ask,
+            self.previous_close, self.next_open, self.modified, self.name, self.description
+        )
 
     def __str__(self):
         return '{0} | {1}'.format(self.symbol, str(self.quote_datetime))
+
+
+class EodDataSymbol(object):
+    """
+    EodData symbol.
+
+    Attributes:
+        code (str): Symbol code.
+        name (str): Asset name.
+        long_name (str): Long name.
+    """
+    def __init__(self, code, name, long_name):
+        self.code = code
+        self.name = name
+        self.long_name = long_name
+
+    @classmethod
+    def from_xml(cls, xml_symbol):
+        """
+        Get EodDataSymbol object from xml element.
+
+        Returns:
+            EodDataSymbol instance.
+        """
+        symbol_dict = xml_symbol.attrib
+        return cls(
+            code=symbol_dict['Code'],
+            name=symbol_dict['Name'],
+            long_name=symbol_dict['LongName']
+        )
+
+    def to_dict(self):
+        return {
+            'Code': self.code,
+            'Name': self.name,
+            'LongName': self.long_name
+        }
+
+    @classmethod
+    def list_to_df(cls, quote_list, index_column='Code'):
+        index = []
+        data = []
+        columns = ['Code', 'Name', 'LongName']
+        columns.remove(index_column)
+        for quote in quote_list:
+            d = quote.to_dict()
+            index.append(d[index_column])
+            del d[index_column]
+            data.append(d)
+        return pd.DataFrame(data=data, index=index,
+                            columns=columns)
+
+    @classmethod
+    def format(cls, quote_list, input_format='entity-list', output_format=None, df_index='Code'):
+        if output_format is None:
+            return quote_list
+        elif input_format == output_format:
+            return quote_list
+        if input_format == 'entity-list' and output_format == 'data-frame':
+            return cls.list_to_df(quote_list, index_column=df_index)
+        else:
+            raise NotImplementedError
+
+    def __repr__(self):
+        return 'EodDataSymbol(code={0}, name={1}, long_name={2})'.format(
+            self.code, self.name, self.long_name
+        )
+
+    def __str__(self):
+        return '{0} | {1}'.format(self.code, self.name)
+
+
+class EodDataSymbolCompact(object):
+    """
+    EodData symbol (compact).
+
+    Attributes:
+        code (str): Symbol code.
+        name (str): Asset name.
+    """
+    def __init__(self, code, name):
+        self.code = code
+        self.name = name
+
+    @classmethod
+    def from_xml(cls, xml_symbol):
+        """
+        Get EodDataSymbolCompact object from xml element.
+
+        Returns:
+            EodDataSymbolCompact instance.
+        """
+        symbol_dict = xml_symbol.attrib
+        return cls(
+            code=symbol_dict['c'],
+            name=symbol_dict['n'],
+        )
+
+    def to_dict(self):
+        return {
+            'Code': self.code,
+            'Name': self.name
+        }
+
+    @classmethod
+    def list_to_df(cls, quote_list, index_column='Code'):
+        index = []
+        data = []
+        columns = ['Code', 'Name']
+        columns.remove(index_column)
+        for quote in quote_list:
+            d = quote.to_dict()
+            index.append(d[index_column])
+            del d[index_column]
+            data.append(d)
+        return pd.DataFrame(data=data, index=index,
+                            columns=columns)
+
+    @classmethod
+    def format(cls, quote_list, input_format='entity-list', output_format=None, df_index='Code'):
+        if output_format is None:
+            return quote_list
+        elif input_format == output_format:
+            return quote_list
+        if input_format == 'entity-list' and output_format == 'data-frame':
+            return cls.list_to_df(quote_list, index_column=df_index)
+        else:
+            raise NotImplementedError
+
+    def __repr__(self):
+        return 'EodDataSymbol(code={0}, name={1}'.format(
+            self.code, self.name
+        )
+
+    def __str__(self):
+        return '{0} | {1}'.format(self.code, self.name)

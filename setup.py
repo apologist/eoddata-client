@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='eoddata_client',
     packages=['eoddata_client'],
-    version='0.3.0',
+    version='0.3.2',
     description='Client to get historical market data from EODData web service.',
     author='Aleksey',
     author_email='apologist.code@gmail.com',
