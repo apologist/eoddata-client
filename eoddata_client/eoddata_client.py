@@ -5,7 +5,8 @@ import xml.etree.ElementTree as ET
 import requests
 
 from eoddata_client.business_entities import (
-    EodDataExchange, EodDataQuoteCompact, EodDataQuoteExtended
+    EodDataExchange, EodDataQuoteCompact, EodDataQuoteExtended,
+    EodDataSymbol, EodDataSymbolCompact
 )
 
 
@@ -93,8 +94,8 @@ class EodDataHttpClient(object):
         SymbolHistory - symbol_history;
         SymbolHistoryPeriod - symbol_history_period;
         SymbolHistoryPeriodByDateRange - symbol_history_period;
-        SymbolList;
-        SymbolList2;
+        SymbolList - symbol_list;
+        SymbolList2 - symbol_list_compact;
         TechnicalList;
         Top10Gains;
         Top10Losses;
@@ -601,3 +602,55 @@ class EodDataHttpClient(object):
         else:
             return self.retry(self.symbol_history_period_by_range, exchange_code, symbol, start_date, end_date, period,
                               output_format=output_format)
+
+    @retry_limit
+    def symbol_list(self, exchange_code, output_format='entity-list'):
+        """
+        Get a list of symbols of a specified exchange.
+        
+        Args:
+            exchange_code (str): Exchange code.
+        """
+        additional = {
+            'Exchange': exchange_code.upper()
+        }    
+        response = requests.get(
+            self._base_url + 'SymbolList',
+            params=self.get_params(additional)
+        )
+        if self.process_response(response):
+            root = ET.fromstring(response.text)
+            symbols_xml = [el for el in list(root) if el.tag.endswith('SYMBOLS')][0]
+            symbols = []
+            for symbol_xml in list(symbols_xml):
+                symbol = EodDataSymbol.from_xml(symbol_xml)
+                symbols.append(symbol)
+            return EodDataSymbol.format(symbols, output_format=output_format)
+        else:
+            return self.retry(self.symbol_list, exchange_code, output_format=output_format)
+
+    def symbol_list_compact(self, exchange_code, output_format='entity-list'):
+        """
+        Get a list of symbols (compact format) of a specified exchange.
+
+        Args:
+            exchange_code (str): Exchange code.
+        """
+        additional = {
+            'Exchange': exchange_code.upper()
+        }
+        response = requests.get(
+            self._base_url + 'SymbolList2',
+            params=self.get_params(additional)
+        )
+        if self.process_response(response):
+            root = ET.fromstring(response.text)
+            symbols_xml = [el for el in list(root) if el.tag.endswith('SYMBOLS2')][0]
+            symbols = []
+            for symbol_xml in list(symbols_xml):
+                symbol = EodDataSymbolCompact.from_xml(symbol_xml)
+                symbols.append(symbol)
+            return EodDataSymbolCompact.format(symbols, output_format=output_format)
+        else:
+            return self.retry(self.symbol_list, exchange_code, output_format=output_format)
+
