@@ -9,10 +9,14 @@ try:
 
     if os.name == 'nt':
         os.environ.setdefault('PYPANDOC_PANDOC',
-                              'c:\\Program Files (x86)\\Pandoc\\pandoc.exe')
+                              'c:\\Program Files (x86)\\Pandoc\\psandoc.exe')
 
     def read_md(f):
-        return convert(f, 'rst', format='md')
+        try:
+            return convert(f, 'rst', format='md')
+        except OSError:
+            return open(f, 'r', encoding='utf-8').read()
+
 except ImportError:
     print('warning: pypandoc module not found, '
           'could not convert Markdown to RST')
