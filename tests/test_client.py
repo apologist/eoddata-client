@@ -1,6 +1,8 @@
 import os
 import re
+import warnings
 import datetime
+import traceback
 
 import pytest
 
@@ -11,12 +13,12 @@ from eoddata_client import EodDataHttpClient, EodDataExchange, \
                            EodDataQuoteExtended, EodDataQuoteCompact, \
                            EodDataSymbol, EodDataSymbolCompact
 from eoddata_client.eoddata_client import TestEnvironmentNotSet as \
-    EnvironmentNotSet, PERIODS
+    EnvironmentNotSet, PERIODS, EodDataInternalServerError
 
 BUSINESS_DAY_US = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
-# get last business day in the USA (take into consideration US holidays)
-TEST_DATE = datetime.date.today() - BUSINESS_DAY_US
+# get last but one business day in the USA (take into consideration US holidays)
+TEST_DATE = datetime.date.today() - BUSINESS_DAY_US * 2
 
 # exclude month and weeks not to cause an error on small periods
 TEST_PERIODS = [p[0] for p in PERIODS if p[0] not in ['m', 'w']]
@@ -24,6 +26,27 @@ TEST_PERIODS = [p[0] for p in PERIODS if p[0] not in ['m', 'w']]
 TEST_EXCHANGE = 'nasdaq'
 
 TEST_SYMBOLS = ['msft', 'amzn', 'aapl']
+
+
+def allow_exception(exceptions):
+    """Decorator that catches certain type of exceptions and warns about them.
+
+    Returns:
+        Wrapped function.
+    """
+    _exceptions = tuple(exceptions)
+
+    def decorate(func):
+        def wrap(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except _exceptions:
+                warnings.warn('Exception occurred in function %s. Args: %s\n'
+                              'Traceback:\n%s' % (func.__name__, args,
+                                                  traceback.format_exc()))
+        return wrap
+
+    return decorate
 
 
 class TestClient(object):
@@ -40,7 +63,7 @@ class TestClient(object):
                                     'username and password accordingly.')
         client.login()
         return client
-
+    
     def test_country_list(self, client):
         client.country_list()
 
@@ -84,12 +107,16 @@ class TestClient(object):
     def test_quote_detail(self, client):
         client.quote_detail(TEST_EXCHANGE, TEST_SYMBOLS[0])
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     def test_quote_list(self, client):
         quotes = client.quote_list(TEST_EXCHANGE)
         df = EodDataQuoteExtended.format(quotes, output_format='data-frame',
                                          df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     def test_quote_list_specific(self, client):
         quotes = client.quote_list_specific(TEST_EXCHANGE,
                                             symbol_list=TEST_SYMBOLS)
@@ -97,18 +124,24 @@ class TestClient(object):
                                          df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     def test_quote_list_by_date(self, client):
         quotes = client.quote_list_by_date(TEST_EXCHANGE, TEST_DATE)
         df = EodDataQuoteExtended.format(quotes, output_format='data-frame',
                                          df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     def test_quote_list_by_date_compact(self, client):
         quotes = client.quote_list_by_date_compact(TEST_EXCHANGE, TEST_DATE)
         df = EodDataQuoteCompact.format(quotes, output_format='data-frame',
                                         df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     @pytest.mark.parametrize('period', TEST_PERIODS)
     def test_quote_list_by_date_period(self, client, period):
         quotes = client.quote_list_by_date_period(TEST_EXCHANGE, TEST_DATE, period)
@@ -116,6 +149,8 @@ class TestClient(object):
                                          df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     @pytest.mark.parametrize('period', TEST_PERIODS)
     def test_quote_list_by_date_period_compact(self, client, period):
         quotes = client\
@@ -124,12 +159,16 @@ class TestClient(object):
                                         df_index='Symbol')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     def test_symbol_history(self, client):
         quotes = client.symbol_history(TEST_EXCHANGE, TEST_SYMBOLS[0],
                                        datetime.date(1990, 1, 1))
         df = EodDataQuoteExtended.format(quotes, output_format='data-frame')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     @pytest.mark.parametrize('period', TEST_PERIODS)
     def test_symbol_history_period(self, client, period):
         business_day_2_weeks_ago = datetime.date.today() \
@@ -139,6 +178,8 @@ class TestClient(object):
         df = EodDataQuoteExtended.format(quotes, output_format='data-frame')
         assert len(quotes) == len(df)
 
+    @pytest.mark.xfail(raises=EodDataInternalServerError, strict=False,
+                       reason='EodData Server Internal Error')
     @pytest.mark.parametrize('period', TEST_PERIODS)
     def test_symbol_history_period_by_range(self, client, period):
         business_day_2_weeks_ago = datetime.date.today() \
