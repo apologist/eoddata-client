@@ -5,7 +5,7 @@ python:
     - "3.6"
 
 install:
-    - pip install -r tests/dev.pip
+    - pip install -r requirements/dev.pip
 
 script:
   - test.sh
