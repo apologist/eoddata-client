@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+from functools import wraps
+
 from eoddata_client.business_entities import (
     EodDataExchange, EodDataQuoteCompact, EodDataQuoteExtended,
     EodDataSymbol, EodDataSymbolCompact
@@ -81,38 +83,38 @@ class EodDataHttpClient(object):
     """EodData web service client.
     
     Endpoints:
-        CountryList - country_list;
-        DataClientLatestVersion - data_client_latest_version;
-        DataFormats - data_formats;
-        ExchangeGet - exchange_detail;
-        ExchangeList - exchange_list;
-        ExchangeMonths - exchange_months;
-        FundamentalList - fundamental_list;
-        Login - login;
-        NewsList - news_list;
-        NewsListBySymbol - news_list_by_symbol;
-        QuoteGet - quote_detail;
-        QuoteList - quote_list;
-        QuoteList2 - quote_list_specific;
-        QuoteListByDate - quote_list_by_date;
-        QuoteListByDate2 - quote_list_by_date_compact;
-        QuoteListByDatePeriod - quote_list_by_date_period;
-        QuoteListByDatePeriod2 - quote_list_by_date_period_compact;
-        SplitListByExchange;
-        SplitListBySymbol;
-        SymbolChangesByExchange;
-        SymbolChart;
-        SymbolGet;
-        SymbolHistory - symbol_history;
-        SymbolHistoryPeriod - symbol_history_period;
-        SymbolHistoryPeriodByDateRange - symbol_history_period;
-        SymbolList - symbol_list;
-        SymbolList2 - symbol_list_compact;
-        TechnicalList;
-        Top10Gains;
-        Top10Losses;
-        UpdateDataFormat;
-        ValidateAccess.
+        - CountryList - country_list;
+        - DataClientLatestVersion - data_client_latest_version;
+        - DataFormats - data_formats;
+        - ExchangeGet - exchange_detail;
+        - ExchangeList - exchange_list;
+        - ExchangeMonths - exchange_months;
+        - FundamentalList - fundamental_list;
+        - Login - login;
+        - NewsList - news_list;
+        - NewsListBySymbol - news_list_by_symbol;
+        - QuoteGet - quote_detail;
+        - QuoteList - quote_list;
+        - QuoteList2 - quote_list_specific;
+        - QuoteListByDate - quote_list_by_date;
+        - QuoteListByDate2 - quote_list_by_date_compact;
+        - QuoteListByDatePeriod - quote_list_by_date_period;
+        - QuoteListByDatePeriod2 - quote_list_by_date_period_compact;
+        - SplitListByExchange;
+        - SplitListBySymbol;
+        - SymbolChangesByExchange;
+        - SymbolChart;
+        - SymbolGet;
+        - SymbolHistory - symbol_history;
+        - SymbolHistoryPeriod - symbol_history_period;
+        - SymbolHistoryPeriodByDateRange - symbol_history_period;
+        - SymbolList - symbol_list;
+        - SymbolList2 - symbol_list_compact;
+        - TechnicalList;
+        - Top10Gains;
+        - Top10Losses;
+        - UpdateDataFormat;
+        - ValidateAccess.
     """
 
     def __init__(self, username, password,
@@ -146,6 +148,7 @@ class EodDataHttpClient(object):
         """
         func.recursion_depth = 0
 
+        @wraps(func)
         def wrapper(*args, **kwargs):
             self = args[0]
             if func.recursion_depth > self._max_login_retries:

@@ -10,6 +10,7 @@ class FunctionRecursionDepthReachedError(Error):
 
 
 class ObjectProxy(object):
+    """Proxy object."""
     def __init__(self, wrapped):
         self.wrapped = wrapped
         try:
@@ -35,7 +36,7 @@ class BoundFunctionWrapper(ObjectProxy):
 
 
 class RecursionDepthManager(object):
-
+    """Decorator to manage recursion depth."""
     def __init__(self, func, max_depth=3):
         self.func = func
         self.max_recursion_depth = max_depth

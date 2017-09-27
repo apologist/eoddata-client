@@ -7,6 +7,7 @@ pep8==1.5.7
 
 # Documentation
 Sphinx==1.6.3
+sphinx-autobuild==0.7.1
 pypandoc>=1.4
 
 # Packaging

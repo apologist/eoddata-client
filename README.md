@@ -8,7 +8,7 @@
 [![Package version](https://badge.fury.io/py/eoddata-client.svg)](https://pypi.python.org/pypi/eoddata-client)
 
 
-**Documentation**: [http://eoddata-client.readthedocs.org](http://eoddata-client.readthedocs.org)
+**Documentation**: [http://eoddata-client.readthedocs.io/](http://eoddata-client.readthedocs.io/)
 
 **Requirements**: Python 3.5+, [requests](http://docs.python-requests.org/) and [pandas](http://pandas.pydata.org/)
 
