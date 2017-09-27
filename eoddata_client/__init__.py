@@ -6,5 +6,9 @@ from .eoddata_client import (
 from .business_entities import (
     EodDataQuoteExtended,
     EodDataQuoteCompact,
-    EodDataExchange
+    EodDataExchange,
+    EodDataSymbol,
+    EodDataSymbolCompact
 )
+
+__version__ = '0.3.3'

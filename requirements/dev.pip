@@ -1,0 +1,19 @@
+# Package dependencies
+-r lib.pip
+
+# Code linting
+flake8==2.4.0
+pep8==1.5.7
+
+# Documentation
+Sphinx==1.6.3
+sphinx-autobuild==0.7.1
+pypandoc>=1.4
+
+# Packaging
+twine==1.9.1
+wheel==0.29.0
+
+# Testing
+pytest==3.2.2
+pytest-cov==2.5.1
